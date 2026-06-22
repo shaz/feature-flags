@@ -120,6 +120,7 @@ class FlagOut(BaseModel):
     description: str | None
     kind: str
     variations: list[Variation]
+    salt: str
     temporary: bool
     tags: list[str]
     owner: str | None

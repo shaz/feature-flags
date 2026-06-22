@@ -1,0 +1,174 @@
+[
+  {
+    "name": "flag off serves offVariation",
+    "flag": {
+      "key": "f-off", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {
+        "enabled": false, "offVariation": 1,
+        "fallthrough": {"variation": 0}
+      }
+    },
+    "context": {"kind": "user", "key": "anyone"},
+    "expected": {"variationIndex": 1, "value": false, "reason": "OFF"}
+  },
+  {
+    "name": "enabled, no rules -> fallthrough",
+    "flag": {
+      "key": "f-fall", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {"enabled": true, "offVariation": 1, "fallthrough": {"variation": 0}}
+    },
+    "context": {"kind": "user", "key": "anyone"},
+    "expected": {"variationIndex": 0, "value": true, "reason": "FALLTHROUGH"}
+  },
+  {
+    "name": "individual target match wins over fallthrough",
+    "flag": {
+      "key": "f-target", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "targets": [{"contextKind": "user", "variation": 1, "keys": ["u-block"]}],
+        "fallthrough": {"variation": 0}
+      }
+    },
+    "context": {"kind": "user", "key": "u-block"},
+    "expected": {"variationIndex": 1, "value": false, "reason": "TARGET_MATCH"}
+  },
+  {
+    "name": "rule with 'in' clause matches (user.country)",
+    "flag": {
+      "key": "f-rule", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "rules": [
+          {"clauses": [{"contextKind": "user", "attribute": "country", "op": "in", "values": ["US", "CA"]}], "variation": 0}
+        ],
+        "fallthrough": {"variation": 1}
+      }
+    },
+    "context": {"kind": "user", "key": "u1", "country": "US"},
+    "expected": {"variationIndex": 0, "value": true, "reason": "RULE_MATCH"}
+  },
+  {
+    "name": "rule does not match -> fallthrough",
+    "flag": {
+      "key": "f-rule", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "rules": [
+          {"clauses": [{"contextKind": "user", "attribute": "country", "op": "in", "values": ["US", "CA"]}], "variation": 0}
+        ],
+        "fallthrough": {"variation": 1}
+      }
+    },
+    "context": {"kind": "user", "key": "u1", "country": "MX"},
+    "expected": {"variationIndex": 1, "value": false, "reason": "FALLTHROUGH"}
+  },
+  {
+    "name": "segmentMatch clause (included key)",
+    "flag": {
+      "key": "f-seg", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "rules": [
+          {"clauses": [{"contextKind": "user", "attribute": "key", "op": "segmentMatch", "values": ["power-viewers"]}], "variation": 0}
+        ],
+        "fallthrough": {"variation": 1}
+      }
+    },
+    "segments": [
+      {"key": "power-viewers", "contextKind": "user", "included": ["u-vip"], "excluded": [], "rules": []}
+    ],
+    "context": {"kind": "user", "key": "u-vip"},
+    "expected": {"variationIndex": 0, "value": true, "reason": "RULE_MATCH"}
+  },
+  {
+    "name": "prerequisite not met -> offVariation",
+    "flag": {
+      "key": "f-prereq", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "prerequisites": [{"flagKey": "gate", "variation": 0}],
+        "fallthrough": {"variation": 0}
+      }
+    },
+    "prereqFlags": [
+      {
+        "key": "gate", "salt": "s1", "kind": "boolean",
+        "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+        "config": {"enabled": true, "offVariation": 1, "fallthrough": {"variation": 1}}
+      }
+    ],
+    "context": {"kind": "user", "key": "u1"},
+    "expected": {"variationIndex": 1, "value": false, "reason": "PREREQUISITE_FAILED"}
+  },
+  {
+    "name": "prerequisite met -> proceed to fallthrough",
+    "flag": {
+      "key": "f-prereq", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "prerequisites": [{"flagKey": "gate", "variation": 0}],
+        "fallthrough": {"variation": 0}
+      }
+    },
+    "prereqFlags": [
+      {
+        "key": "gate", "salt": "s1", "kind": "boolean",
+        "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+        "config": {"enabled": true, "offVariation": 1, "fallthrough": {"variation": 0}}
+      }
+    ],
+    "context": {"kind": "user", "key": "u1"},
+    "expected": {"variationIndex": 0, "value": true, "reason": "FALLTHROUGH"}
+  },
+  {
+    "name": "fallthrough rollout 60/40 -> variation 1 (user-charlie)",
+    "flag": {
+      "key": "reco-rail-ml", "salt": "s4ltf1xed", "kind": "multivariate",
+      "variations": [{"name": "treatment", "value": "ml"}, {"name": "control", "value": "baseline"}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "fallthrough": {"rollout": {"contextKind": "user", "bucketBy": "key", "variations": [{"variation": 0, "weight": 60000}, {"variation": 1, "weight": 40000}]}}
+      }
+    },
+    "context": {"kind": "user", "key": "user-charlie"},
+    "expected": {"variationIndex": 1, "value": "baseline", "reason": "FALLTHROUGH"}
+  },
+  {
+    "name": "fallthrough rollout 60/40 -> variation 0 (user-delta)",
+    "flag": {
+      "key": "reco-rail-ml", "salt": "s4ltf1xed", "kind": "multivariate",
+      "variations": [{"name": "treatment", "value": "ml"}, {"name": "control", "value": "baseline"}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "fallthrough": {"rollout": {"contextKind": "user", "bucketBy": "key", "variations": [{"variation": 0, "weight": 60000}, {"variation": 1, "weight": 40000}]}}
+      }
+    },
+    "context": {"kind": "user", "key": "user-delta"},
+    "expected": {"variationIndex": 0, "value": "ml", "reason": "FALLTHROUGH"}
+  },
+  {
+    "name": "multi-context rule on device.osVersion",
+    "flag": {
+      "key": "f-multi", "salt": "s1", "kind": "boolean",
+      "variations": [{"name": "On", "value": true}, {"name": "Off", "value": false}],
+      "config": {
+        "enabled": true, "offVariation": 1,
+        "rules": [
+          {"clauses": [{"contextKind": "device", "attribute": "osVersion", "op": "in", "values": ["17"]}], "variation": 0}
+        ],
+        "fallthrough": {"variation": 1}
+      }
+    },
+    "context": {"kind": "multi", "user": {"key": "u1"}, "device": {"key": "d1", "osVersion": "17"}},
+    "expected": {"variationIndex": 0, "value": true, "reason": "RULE_MATCH"}
+  }
+]

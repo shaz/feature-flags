@@ -37,9 +37,13 @@ def engine():
         pytest.skip(f"Postgres not reachable: {exc}")
     # Clean slate, then apply schema. exec_driver_sql bypasses SQLAlchemy's
     # bind-param parsing (the JSONB defaults contain ':' which text() misreads).
+    ups = sorted(_MIGRATIONS.glob("*.up.sql"))
+    downs = sorted(_MIGRATIONS.glob("*.down.sql"), reverse=True)
     with conn.begin():
-        conn.exec_driver_sql((_MIGRATIONS / "0001_init.down.sql").read_text())
-        conn.exec_driver_sql((_MIGRATIONS / "0001_init.up.sql").read_text())
+        for f in downs:
+            conn.exec_driver_sql(f.read_text())
+        for f in ups:
+            conn.exec_driver_sql(f.read_text())
     conn.close()
     yield eng
     eng.dispose()

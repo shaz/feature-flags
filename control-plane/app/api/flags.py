@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
@@ -56,6 +57,7 @@ def create_flag(
         description=body.description,
         kind=body.kind,
         variations=[v.model_dump() for v in body.variations],
+        salt=secrets.token_hex(8),
         temporary=body.temporary,
         tags=body.tags,
         owner=body.owner,

@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Environment, Flag, Project
+from app.models import Environment, Flag, Project, Segment
 
 
 def get_project(session: Session, project_key: str) -> Project:
@@ -33,3 +33,14 @@ def get_flag(session: Session, project_id, flag_key: str) -> Flag:
     if flag is None:
         raise HTTPException(404, f"flag {flag_key!r} not found")
     return flag
+
+
+def get_segment(session: Session, project_id, segment_key: str) -> Segment:
+    seg = session.scalar(
+        select(Segment).where(
+            Segment.project_id == project_id, Segment.key == segment_key
+        )
+    )
+    if seg is None:
+        raise HTTPException(404, f"segment {segment_key!r} not found")
+    return seg

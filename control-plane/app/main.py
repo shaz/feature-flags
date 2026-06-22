@@ -5,7 +5,7 @@ import logging
 
 from fastapi import FastAPI
 
-from app.api import flags, projects
+from app.api import audit, credentials, flags, projects, segments
 from app.config import Config, load_config
 from app.db import init_engine
 from app.logging_setup import configure_logging
@@ -25,6 +25,9 @@ def create_app(config: Config | None = None) -> FastAPI:
     app = FastAPI(title="fubo-flags control plane", version="0.1.0")
     app.include_router(projects.router, prefix="/api/v1")
     app.include_router(flags.router, prefix="/api/v1")
+    app.include_router(segments.router, prefix="/api/v1")
+    app.include_router(credentials.router, prefix="/api/v1")
+    app.include_router(audit.router, prefix="/api/v1")
 
     @app.get("/healthz", tags=["meta"])
     def healthz() -> dict[str, str]:

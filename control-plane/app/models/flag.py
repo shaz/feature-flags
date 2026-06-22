@@ -27,6 +27,8 @@ class Flag(Base):
     kind: Mapped[str] = mapped_column(Text)  # boolean | multivariate
     # ordered; rules/fallthrough/targets reference these by index
     variations: Mapped[list] = mapped_column(JSONB)
+    # per-flag bucketing salt for percentage rollouts (DESIGN.md §5)
+    salt: Mapped[str] = mapped_column(Text)
     temporary: Mapped[bool] = mapped_column(Boolean, default=True)
     tags: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
     owner: Mapped[str | None] = mapped_column(Text)
