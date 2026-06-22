@@ -1,0 +1,36 @@
+# ---- Python (control-plane) ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# ---- Go (data-plane, sdk) ----
+bin/
+*.test
+*.out
+vendor/
+
+# ---- Node (web sdk, later) ----
+node_modules/
+dist/
+
+# ---- Terraform ----
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+
+# ---- Local / editor ----
+*.log
+.DS_Store
+.idea/
+.vscode/
+CLAUDE.local.md
