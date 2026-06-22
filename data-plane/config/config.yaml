@@ -1,0 +1,6 @@
+# data-plane configuration. DATABASE_URL comes from the environment.
+port: 8090
+
+# How often to reassemble rulesets from Postgres. The change bus (NOTIFY) drives
+# immediate reloads; this poll is the backstop. FUBO_FLAGS_DP_RELOAD overrides.
+reload_seconds: 5

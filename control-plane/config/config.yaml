@@ -19,6 +19,8 @@ logging:
   level: DEBUG          # DEBUG during early development per project conventions
   format: "%(asctime)s %(levelname)s %(name)s %(message)s"
 
-# Change-notification bus. Phase 1 logs intent only; data plane wires this up.
+# Change-notification bus. `postgres` issues pg_notify(flags_changed) in the
+# change's transaction; the data plane LISTENs and reloads. `log` is a no-op for
+# environments without a data plane.
 notify:
-  backend: log          # log | postgres | redis
+  backend: postgres     # log | postgres | redis

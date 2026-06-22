@@ -101,7 +101,7 @@ def update_segment_config(
         project_id=project.id, environment_id=env.id,
     )
     session.flush()
-    notify.env_changed(env.id)
+    notify.env_changed(session, env.id)
     return _config_out(env.key, cfg)
 
 

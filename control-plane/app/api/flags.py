@@ -161,7 +161,7 @@ def update_flag_config(
         diff={"before": before, "after": after},
     )
     session.flush()
-    notify.env_changed(env.id)
+    notify.env_changed(session, env.id)
     return _config_out(env.key, cfg)
 
 

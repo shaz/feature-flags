@@ -1,17 +1,23 @@
 """Change-notification bus.
 
-When a flag/segment config changes, the data plane needs to reload that
-environment's ruleset (DESIGN.md §2, §6). Phase 1 only logs intent; the
-`postgres` (LISTEN/NOTIFY) and `redis` backends land with the data plane.
+When a flag/segment config changes, the data plane reloads that environment's
+ruleset (DESIGN.md §2, §6). The `postgres` backend issues `pg_notify` in the
+same transaction as the change, so the signal fires exactly when the change
+commits (and rolls back with it if the transaction aborts). `log` is a no-op
+used in environments without a data plane.
 """
 from __future__ import annotations
 
 import logging
 import uuid
 
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 log = logging.getLogger(__name__)
 
 _backend = "log"
+CHANNEL = "flags_changed"
 
 
 def configure(backend: str) -> None:
@@ -20,10 +26,15 @@ def configure(backend: str) -> None:
     log.debug("notify backend = %s", backend)
 
 
-def env_changed(environment_id: uuid.UUID) -> None:
+def env_changed(session: Session, environment_id: uuid.UUID) -> None:
     """Signal that an environment's ruleset changed."""
-    if _backend == "log":
+    if _backend == "postgres":
+        session.execute(
+            text("SELECT pg_notify(:chan, :payload)"),
+            {"chan": CHANNEL, "payload": str(environment_id)},
+        )
+        log.debug("pg_notify %s %s", CHANNEL, environment_id)
+    elif _backend == "log":
         log.info("[notify:stub] environment %s changed", environment_id)
-        return
-    # TODO(phase-2): postgres NOTIFY flags_changed / redis publish
-    raise NotImplementedError(f"notify backend {_backend!r} not implemented yet")
+    else:
+        raise NotImplementedError(f"notify backend {_backend!r} not implemented")
